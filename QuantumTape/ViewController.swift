@@ -13,6 +13,8 @@ import ARKit
 class ViewController: UIViewController, ARSCNViewDelegate {
 
     @IBOutlet var sceneView: ARSCNView!
+    var dotNodes = [SCNNode]()
+    var textNode = SCNNode()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -45,6 +47,13 @@ class ViewController: UIViewController, ARSCNViewDelegate {
  
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         //began touch
+        
+        if dotNodes.count >= 2{
+            for dot in dotNodes{
+                dot.removeFromParentNode()
+            }
+            dotNodes = [SCNNode]()
+        }
         if let touchLocation = touches.first?.location(in: sceneView){
             let hitTestResults = sceneView.hitTest(touchLocation, types: .featurePoint)
                 
@@ -67,6 +76,38 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         dotNode.position = SCNVector3.init(hitResult.worldTransform.columns.3.x, hitResult.worldTransform.columns.3.y, hitResult.worldTransform.columns.3.z)
         
         sceneView.scene.rootNode.addChildNode(dotNode)
+        dotNodes.append(dotNode)
         
+        if dotNodes.count >= 2{
+            calculate()
+        }
+        
+    }
+    
+    func calculate(){
+        let start = dotNodes[0]
+        let end = dotNodes[1]
+        
+        print("start = \(start)")
+        print("end = \(end)")
+        
+        let A = end.position.x - start.position.x
+        let B = end.position.y - start.position.y
+        let C = end.position.z - start.position.z
+        
+        let D = sqrt(pow(A, 2) + pow(B, 2) + pow(C, 2))
+        print("distance = \(abs(D))")
+        updateText(text: "\(abs(D))", atPosition: end.position)
+        
+    }
+    func updateText(text: String, atPosition position: SCNVector3)  {
+        
+        textNode.removeFromParentNode()
+        let textGeometry = SCNText.init(string: text, extrusionDepth: 1.0)
+        textGeometry.firstMaterial?.diffuse.contents = UIColor.orange
+        textNode = SCNNode.init(geometry: textGeometry)
+        textNode.position = SCNVector3.init(position.x, position.y + 0.01, position.z)
+        textNode.scale = SCNVector3.init(0.001, 0.001, 0.001)
+        sceneView.scene.rootNode.addChildNode(textNode)
     }
 }
